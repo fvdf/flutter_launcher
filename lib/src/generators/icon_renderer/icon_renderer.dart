@@ -7,6 +7,7 @@ import '../../utils/logger.dart';
 class IconRenderer {
   final String workingDir;
   final LauncherConfig config;
+  String _cachedSdkPath = '';
 
   IconRenderer(this.workingDir, this.config);
 
@@ -18,7 +19,6 @@ class IconRenderer {
       rendererDir.createSync(recursive: true);
     }
 
-    // On cherche le SDK Flutter pour copier la font
     final flutterSdkPath = await _getFlutterSdkPath();
     final fontSource = p.join(flutterSdkPath, 'bin', 'cache', 'artifacts',
         'material_fonts', 'MaterialIcons-Regular.otf');
@@ -31,32 +31,35 @@ class IconRenderer {
       fontFile.copySync(p.join(fontDestDir.path, 'MaterialIcons-Regular.otf'));
     } else {
       Logger.warn(
-          'Police MaterialIcons introuvable dans le SDK ($fontSource). Le rendu pourrait échouer.');
+          'Police MaterialIcons introuvable dans le SDK ($fontSource).');
     }
 
-    Logger.step('Préparation du projet de rendu temporaire');
-    _prepareRendererProject(rendererDir.path);
+    final symbolCode =
+        await _getSymbolCode(config.icon.symbol, config.icon.style);
 
-    Logger.step(
-        'Exécution du rendu Flutter (Premier lancement : téléchargement de l\'engine en cours...)');
+    Logger.step('Préparation du projet de rendu temporaire');
+    _prepareRendererProject(rendererDir.path, symbolCode);
+
+    Logger.step('Exécution du rendu Flutter...');
     await _runRenderer(rendererDir.path);
 
     Logger.success('Images de base générées dans build/flutter_launcher');
   }
 
   Future<String> _getFlutterSdkPath() async {
+    if (_cachedSdkPath.isNotEmpty) return _cachedSdkPath;
     try {
       final res = await Process.run('which', ['flutter']);
       if (res.exitCode == 0) {
         final flutterBin = res.stdout.toString().trim();
-        return p.dirname(p.dirname(flutterBin));
+        _cachedSdkPath = p.dirname(p.dirname(flutterBin));
+        return _cachedSdkPath;
       }
     } catch (_) {}
-    return ''; // Fallback empty
+    return '';
   }
 
-  void _prepareRendererProject(String path) {
-    Logger.debug('Création du fichier pubspec.yaml du renderer...');
+  void _prepareRendererProject(String path, int symbolCode) {
     File(p.join(path, 'pubspec.yaml')).writeAsStringSync('''
 name: launcher_icon_renderer
 environment:
@@ -76,27 +79,18 @@ dev_dependencies:
     sdk: flutter
 ''');
 
-    Logger.debug('Création du code de test de rendu...');
     final testDir = Directory(p.join(path, 'test'));
     if (!testDir.existsSync()) testDir.createSync();
 
     File(p.join(path, 'test', 'render_test.dart'))
-        .writeAsStringSync(_generateTestCode());
+        .writeAsStringSync(_generateTestCode(symbolCode));
   }
 
-  String _generateTestCode() {
-    final symbolCode = _getSymbolCode(config.icon.symbol);
-    final styleSuffix = _getStyleSuffix(config.icon.style);
-
+  String _generateTestCode(int symbolCode) {
     Logger.info('Configuration de l\'icône :');
-    Logger.info(
-        '  - Symbole : ${config.icon.symbol} (Code: 0x${symbolCode.toRadixString(16)})');
-    Logger.info('  - Style : ${config.icon.style} (Suffix: $styleSuffix)');
-    Logger.info('  - Fill : ${config.icon.fill}');
-    Logger.info('  - Weight : ${config.icon.weight}');
-    Logger.info('  - Grade : ${config.icon.grade}');
-    Logger.info('  - Optical Size : ${config.icon.opticalSize}');
-    Logger.info('  - Padding : ${config.icon.padding}');
+    Logger.info('  - Symbole : ${config.icon.symbol}');
+    Logger.info('  - Style : ${config.icon.style}');
+    Logger.info('  - Code résolu : 0x${symbolCode.toRadixString(16)}');
 
     return '''
 import 'dart:io';
@@ -110,8 +104,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Render icons', (WidgetTester tester) async {
-    print('[RENDERER] Démarrage du rendu');
-    print('[RENDERER] Config : SymbolCode=0x${symbolCode.toRadixString(16)}, StyleSuffix=$styleSuffix');
+    print('[RENDERER] Démarrage du rendu (Code=0x${symbolCode.toRadixString(16)})');
     
     tester.view.physicalSize = const Size(1024, 1024);
     tester.view.devicePixelRatio = 1.0;
@@ -131,7 +124,6 @@ void main() {
         fgColor: _parseColor('${config.theme.dark?.secondary ?? "#FFFFFF"}'),
       );
     }
-    print('[RENDERER] Tous les rendus terminés.');
   });
 }
 
@@ -141,7 +133,7 @@ Future<void> _renderIcon(
   required Color bgColor,
   required Color fgColor,
 }) async {
-  print('  [RENDERER] Construction du widget pour ' + name + '...');
+  print('  [RENDERER] Rendu de ' + name + '...');
   final key = GlobalKey();
   
   await tester.pumpWidget(
@@ -155,7 +147,7 @@ Future<void> _renderIcon(
           color: bgColor,
           child: Center(
             child: Icon(
-              IconData(0x${symbolCode.toRadixString(16)}, fontFamily: 'MaterialIcons$styleSuffix'),
+              IconData(0x${symbolCode.toRadixString(16)}, fontFamily: 'MaterialIcons'),
               color: fgColor,
               size: 1024 * (1.0 - ${config.icon.padding} * 2),
             ),
@@ -170,14 +162,10 @@ Future<void> _renderIcon(
   final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
   
   await tester.runAsync(() async {
-    print('    [RENDERER] Capture de la surface...');
     final image = await boundary.toImage(pixelRatio: 1.0);
-    
-    print('    [RENDERER] Extraction des pixels...');
     final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (byteData == null) throw Exception('byteData est null');
+    if (byteData == null) throw Exception('byteData null');
 
-    print('    [RENDERER] Encodage PNG...');
     final rawBytes = byteData.buffer.asUint8List();
     final imgImage = img.Image.fromBytes(
       width: 1024,
@@ -187,8 +175,6 @@ Future<void> _renderIcon(
     );
     
     final pngBytes = img.encodePng(imgImage);
-    
-    print('    [RENDERER] Écriture de ' + name);
     final file = File('../' + name);
     await file.writeAsBytes(pngBytes);
   });
@@ -202,19 +188,6 @@ Color _parseColor(String hex) {
 ''';
   }
 
-  String _getStyleSuffix(String style) {
-    switch (style.toLowerCase()) {
-      case 'rounded':
-        return '_Rounded';
-      case 'sharp':
-        return '_Sharp';
-      case 'outlined':
-        return '_Outlined';
-      default:
-        return '';
-    }
-  }
-
   Future<void> _runRenderer(String path) async {
     final process = await Process.start(
       'flutter',
@@ -226,71 +199,48 @@ Color _parseColor(String hex) {
     process.stderr.transform(utf8.decoder).listen(Logger.pipe);
 
     final exitCode = await process.exitCode;
-
-    if (exitCode != 0) {
-      throw Exception('Rendu échoué.');
-    }
+    if (exitCode != 0) throw Exception('Rendu échoué.');
   }
 
-  int _getSymbolCode(String name) {
-    final map = {
-      'settings': 0xe8b8,
-      'home': 0xe88a,
-      'person': 0xe7fd,
-      'favorite': 0xe87d,
-      'search': 0xe8b6,
-      'star': 0xe838,
-      'add': 0xe145,
-      'menu': 0xe5d2,
-      'close': 0xe5cd,
-      'check': 0xe5ca,
-      'notifications': 0xe7f4,
-      'mail': 0xe158,
-      'camera': 0xe3af,
-      'image': 0xe3f4,
-      'play_arrow': 0xe037,
-      'pause': 0xe034,
-      'stop': 0xe047,
-      'shopping_cart': 0xe8cc,
-      'info': 0xe88e,
-      'help': 0xe887,
-      'warning': 0xe002,
-      'error': 0xe000,
-      'account_circle': 0xe853,
-      'arrow_forward': 0xe5c8,
-      'arrow_back': 0xe5c4,
-      'refresh': 0xe5d5,
-      'share': 0xe80d,
-      'thumb_up': 0xe8dc,
-      'thumb_down': 0xe8db,
-      'visibility': 0xe8f4,
-      'visibility_off': 0xe8f5,
-      'lock': 0xe897,
-      'unlock': 0xe898,
-      'map': 0xe55b,
-      'place': 0xe55f,
-      'phone': 0xe0cd,
-      'email': 0xe0be,
-      'event': 0xe878,
-      'schedule': 0xe8b5,
-      'cloud': 0xe2bd,
-      'download': 0xf090,
-      'upload': 0xf09b,
-      'delete': 0xe872,
-      'edit': 0xe3c9,
-      'save': 0xe161,
-      'rocket': 0xeba5,
-      'bolt': 0xea0b,
-      'eco': 0xea35,
-      'pets': 0xe91d,
-      'flight': 0xe539,
-      'directions_car': 0xe531,
-    };
-
+  Future<int> _getSymbolCode(String name, String style) async {
     if (name.startsWith('0x')) {
       return int.tryParse(name.substring(2), radix: 16) ?? 0xe8b8;
     }
 
-    return map[name.toLowerCase()] ?? 0xe8b8;
+    final query = name.toLowerCase();
+    final styleName = style.toLowerCase();
+
+    try {
+      final flutterSdk = await _getFlutterSdkPath();
+      if (flutterSdk.isNotEmpty) {
+        final codepointsFile = p.join(flutterSdk, 'bin', 'cache', 'artifacts',
+            'material_fonts', 'codepoints');
+        if (File(codepointsFile).existsSync()) {
+          final lines = await File(codepointsFile).readAsLines();
+
+          final candidates = [
+            '${query}_$styleName',
+            '${query}_baseline',
+            query,
+          ];
+
+          for (final cand in candidates) {
+            for (final line in lines) {
+              final parts = line.split(' ');
+              if (parts.length == 2 && parts[0] == cand) {
+                return int.parse(parts[1], radix: 16);
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    final fallback = {
+      'settings': 0xe8b8,
+      'home': 0xe88a,
+      'search': 0xe8b6,
+    };
+    return fallback[query] ?? 0xe8b8;
   }
 }
