@@ -22,17 +22,15 @@ class IconRenderer {
     final flutterSdkPath = await _getFlutterSdkPath();
     final fontSource = p.join(flutterSdkPath, 'bin', 'cache', 'artifacts',
         'material_fonts', 'MaterialIcons-Regular.otf');
+    final robotoSource = p.join(flutterSdkPath, 'bin', 'cache', 'artifacts',
+        'material_fonts', 'Roboto-Regular.ttf');
+
     final fontDestDir = Directory(p.join(rendererDir.path, 'assets', 'fonts'));
     if (!fontDestDir.existsSync()) fontDestDir.createSync(recursive: true);
 
-    final fontFile = File(fontSource);
-    if (fontFile.existsSync()) {
-      Logger.debug('Copie de la police MaterialIcons depuis le SDK...');
-      fontFile.copySync(p.join(fontDestDir.path, 'MaterialIcons-Regular.otf'));
-    } else {
-      Logger.warn(
-          'Police MaterialIcons introuvable dans le SDK ($fontSource).');
-    }
+    _copyFont(
+        fontSource, p.join(fontDestDir.path, 'MaterialIcons-Regular.otf'));
+    _copyFont(robotoSource, p.join(fontDestDir.path, 'Roboto-Regular.ttf'));
 
     final symbolCode =
         await _getSymbolCode(config.icon.symbol, config.icon.style);
@@ -44,6 +42,16 @@ class IconRenderer {
     await _runRenderer(rendererDir.path);
 
     Logger.success('Images de base générées dans build/flutter_launcher');
+  }
+
+  void _copyFont(String source, String dest) {
+    final file = File(source);
+    if (file.existsSync()) {
+      Logger.debug('Copie de \${p.basename(source)}...');
+      file.copySync(dest);
+    } else {
+      Logger.warn('Police \${p.basename(source)} introuvable ($source).');
+    }
   }
 
   Future<String> _getFlutterSdkPath() async {
@@ -104,15 +112,23 @@ void main() {
   testWidgets('Render icons', (WidgetTester tester) async {
     print('[RENDERER] Démarrage du test');
     
-    print('[RENDERER] Chargement de la police depuis assets...');
+    print('[RENDERER] Chargement des polices...');
     try {
-      final fontData = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
-      final loader = FontLoader('MaterialIcons');
-      loader.addFont(Future.value(ByteData.view(fontData.buffer)));
-      await loader.load();
-      print('[RENDERER] Police chargée avec succès.');
+      // MaterialIcons
+      final iconFont = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
+      final iconLoader = FontLoader('MaterialIcons');
+      iconLoader.addFont(Future.value(ByteData.view(iconFont.buffer)));
+      await iconLoader.load();
+
+      // Roboto (pour le texte)
+      final robotoFont = File('assets/fonts/Roboto-Regular.ttf').readAsBytesSync();
+      final robotoLoader = FontLoader('Roboto');
+      robotoLoader.addFont(Future.value(ByteData.view(robotoFont.buffer)));
+      await robotoLoader.load();
+
+      print('[RENDERER] Polices chargées avec succès.');
     } catch (e) {
-      print('[RENDERER] ERREUR chargement police: ' + e.toString());
+      print('[RENDERER] ERREUR chargement polices: ' + e.toString());
     }
 
     tester.view.physicalSize = const Size(1024, 1024);
@@ -186,9 +202,10 @@ Future<void> _renderIcon(
   final key = GlobalKey();
   
   await tester.pumpWidget(
-    Directionality(
-      textDirection: TextDirection.ltr,
-      child: Center(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'Roboto'),
+      home: Center(
         child: RepaintBoundary(
           key: key,
           child: Container(
@@ -207,11 +224,12 @@ Future<void> _renderIcon(
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: _parseColor(branding.color),
-                            fontSize: branding.fontSize * 2, // Scale up for 1024x1024
+                            fontSize: branding.fontSize * 2.5, // Scale up for 1024x1024
                             fontWeight: FontWeight.bold,
+                            height: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 60),
                       ],
                       Icon(
                         IconData(symbolCode, fontFamily: 'MaterialIcons'),
@@ -230,14 +248,15 @@ Future<void> _renderIcon(
                         ],
                       ),
                       if (branding != null && branding.position == 'bottom') ...[
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 60),
                         Text(
                           branding.text,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: _parseColor(branding.color),
-                            fontSize: branding.fontSize * 2, // Scale up
+                            fontSize: branding.fontSize * 2.5,
                             fontWeight: FontWeight.bold,
+                            height: 1.2,
                           ),
                         ),
                       ],
