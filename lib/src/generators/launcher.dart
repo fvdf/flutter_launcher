@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import '../config/config_parser.dart';
+import '../config/config_model.dart';
 import '../cli/cli_arguments.dart';
 import '../utils/logger.dart';
 import 'icon_renderer/icon_renderer.dart';
@@ -26,7 +27,26 @@ class Launcher {
       }
 
       Logger.step('Chargement du pubspec.yaml');
-      final config = ConfigParser.parsePubspec(projectPath);
+      var config = ConfigParser.parsePubspec(projectPath);
+
+      if (args.symbolCheck != null) {
+        Logger.info('Overriding symbol with : ${args.symbolCheck}');
+        // We create a new config with the overridden symbol
+        config = LauncherConfig(
+          platforms: config.platforms,
+          theme: config.theme,
+          icon: IconConfig(
+            symbol: args.symbolCheck!,
+            style: config.icon.style,
+            fill: config.icon.fill,
+            weight: config.icon.weight,
+            grade: config.icon.grade,
+            opticalSize: config.icon.opticalSize,
+            padding: config.icon.padding,
+          ),
+          splash: config.splash,
+        );
+      }
 
       if (args.dryRun) {
         Logger.warn(
@@ -39,6 +59,13 @@ class Launcher {
       // 1. Render base PNGs
       final renderer = IconRenderer(workingDir, config);
       await renderer.render();
+
+      if (args.renderOnly || args.symbolCheck != null) {
+        Logger.success(
+            'Mode rendu uniquement ou vérification de symbole terminé.');
+        Logger.info('Consultez les fichiers dans : $workingDir');
+        return;
+      }
 
       // 2. Run App Icons Generator
       final iconsRunner = LauncherIconsRunner(workingDir, config);

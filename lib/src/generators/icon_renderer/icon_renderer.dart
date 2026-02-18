@@ -70,10 +70,8 @@ dependencies:
   image: ^4.0.0
 flutter:
   uses-material-design: true
-  fonts:
-    - family: MaterialIcons
-      fonts:
-        - asset: assets/fonts/MaterialIcons-Regular.otf
+  assets:
+    - assets/fonts/MaterialIcons-Regular.otf
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -94,9 +92,11 @@ dev_dependencies:
 
     return '''
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
@@ -104,8 +104,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Render icons', (WidgetTester tester) async {
-    print('[RENDERER] Démarrage du rendu (Code=0x${symbolCode.toRadixString(16)})');
-    
+    print('[RENDERER] Chargement explicite de la police...');
+    await _loadFont();
+
     tester.view.physicalSize = const Size(1024, 1024);
     tester.view.devicePixelRatio = 1.0;
 
@@ -125,6 +126,13 @@ void main() {
       );
     }
   });
+}
+
+Future<void> _loadFont() async {
+  final fontData = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
+  final loader = FontLoader('MaterialIcons');
+  loader.addFont(Future.value(ByteData.view(fontData.buffer)));
+  await loader.load();
 }
 
 Future<void> _renderIcon(
@@ -157,7 +165,8 @@ Future<void> _renderIcon(
     ),
   );
 
-  await tester.pump();
+  await tester.pumpAndSettle();
+  await Future.delayed(const Duration(milliseconds: 100)); // Petit délai de sécurité
 
   final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
   

@@ -21,28 +21,37 @@ dev_dependencies:
 
 ## Configuration
 
-Ajoutez une section `flutter_launcher` dans votre `pubspec.yaml` :
+### Exemple Complet
 
 ```yaml
 flutter_launcher:
+  # Plateformes cibles (true/false)
   platforms:
     android: true
     ios: true
     web: true
     macos: true
 
+  # Thème de l'application
   theme:
     light:
-      primary: "#E91E63"
-      secondary: "#FFFFFF"
+      primary: "#E91E63"   # Fond
+      secondary: "#FFFFFF" # Icône
     dark:
       primary: "#AD1457"
       secondary: "#E1E1E1"
 
+  # Configuration de l'icône (Material Symbol)
   icon:
-    symbol: "settings"
-    padding: 0.18
+    symbol: "search"       # Nom ou code hexa (0xe8b6)
+    style: "outlined"      # baseline, outlined, rounded, sharp
+    padding: 0.18          # Espace (0.0 à 0.5)
+    fill: 1
+    weight: 700
+    grade: 0.0
+    optical_size: 48
 
+  # Splash Screen
   splash:
     enabled: true
     android12: true
