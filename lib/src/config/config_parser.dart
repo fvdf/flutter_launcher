@@ -63,12 +63,12 @@ class ConfigParser {
       throw Exception('primary color is required');
     }
     final primary = yaml['primary'].toString();
-    final secondary = yaml['secondary']?.toString();
+    final background = yaml['background']?.toString();
 
     _validateHex(primary);
-    if (secondary != null) _validateHex(secondary);
+    if (background != null) _validateHex(background);
 
-    return ColorSet(primary: primary, secondary: secondary);
+    return ColorSet(primary: primary, background: background);
   }
 
   static IconConfig _parseIcon(dynamic yaml) {
@@ -85,6 +85,28 @@ class ConfigParser {
       opticalSize: yaml['opticalSize'] is int ? yaml['opticalSize'] : 48,
       padding:
           (yaml['padding'] is num ? yaml['padding'] as num : 0.18).toDouble(),
+      shadow: _parseShadow(yaml['shadow']),
+    );
+  }
+
+  static ShadowConfig? _parseShadow(dynamic yaml) {
+    if (yaml == null) return null;
+    if (yaml is! YamlMap) return null;
+
+    final enabled = yaml['enabled'] is bool ? yaml['enabled'] : false;
+    if (!enabled) return null;
+
+    final color = yaml['color']?.toString() ?? '#000000';
+    _validateHex(color);
+
+    return ShadowConfig(
+      enabled: true,
+      color: color,
+      blur: (yaml['blur'] is num ? yaml['blur'] as num : 10.0).toDouble(),
+      offsetX:
+          (yaml['offset_x'] is num ? yaml['offset_x'] as num : 0.0).toDouble(),
+      offsetY:
+          (yaml['offset_y'] is num ? yaml['offset_y'] as num : 0.0).toDouble(),
     );
   }
 

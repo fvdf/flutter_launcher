@@ -35,11 +35,11 @@ flutter_launcher:
   # Thème de l'application
   theme:
     light:
-      primary: "#E91E63"   # Fond
-      secondary: "#FFFFFF" # Icône
+      primary: "#FFFFFF"   # Couleur de l'icône (Foreground)
+      background: "#E91E63" # Couleur de fond (Background)
     dark:
-      primary: "#AD1457"
-      secondary: "#E1E1E1"
+      primary: "#E1E1E1"
+      background: "#AD1457"
 
   # Configuration de l'icône (Material Symbol)
   icon:
@@ -50,6 +50,13 @@ flutter_launcher:
     weight: 700
     grade: 0.0
     optical_size: 48
+    # Ombre sur l'icône :
+    shadow:
+      enabled: true        # Activer l'ombre
+      color: "#000000"     # Couleur avec opacité possible (ex: #80000000)
+      blur: 20.0           # Rayon de flou
+      offset_x: 5.0        # Décalage horizontal
+      offset_y: 5.0        # Décalage vertical
 
   # Splash Screen
   splash:

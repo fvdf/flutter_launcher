@@ -55,7 +55,8 @@ class LauncherIconsRunner {
     // Android
     if (pMap['android'] == true) {
       yaml += '  android: true\n';
-      yaml += '  adaptive_icon_background: "${config.theme.light.primary}"\n';
+      yaml +=
+          '  adaptive_icon_background: "${config.theme.light.background ?? "#FFFFFF"}"\n';
       yaml +=
           '  adaptive_icon_foreground: "build/flutter_launcher/app_icon_light.png"\n';
     }

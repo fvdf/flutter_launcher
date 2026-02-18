@@ -21,9 +21,9 @@ class ThemeConfig {
 
 class ColorSet {
   final String primary;
-  final String? secondary;
+  final String? background;
 
-  ColorSet({required this.primary, this.secondary});
+  ColorSet({required this.primary, this.background});
 }
 
 class IconConfig {
@@ -34,6 +34,7 @@ class IconConfig {
   final double grade;
   final int opticalSize;
   final double padding;
+  final ShadowConfig? shadow;
 
   IconConfig({
     required this.symbol,
@@ -43,6 +44,23 @@ class IconConfig {
     this.grade = 0.0,
     this.opticalSize = 48,
     this.padding = 0.18,
+    this.shadow,
+  });
+}
+
+class ShadowConfig {
+  final bool enabled;
+  final String color;
+  final double blur;
+  final double offsetX;
+  final double offsetY;
+
+  ShadowConfig({
+    this.enabled = false,
+    this.color = '#000000',
+    this.blur = 10.0,
+    this.offsetX = 0.0,
+    this.offsetY = 0.0,
   });
 }
 

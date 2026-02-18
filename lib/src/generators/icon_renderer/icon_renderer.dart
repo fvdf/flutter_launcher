@@ -121,18 +121,18 @@ void main() {
     await _renderIcon(
       tester,
       name: 'app_icon_light.png',
-      bgColor: _parseColor('${config.theme.light.primary}'),
-      fgColor: _parseColor('${config.theme.light.secondary ?? "#FFFFFF"}'),
+      bgColor: _parseColor('${config.theme.light.background ?? "#FFFFFF"}'),
+      fgColor: _parseColor('${config.theme.light.primary}'),
       symbolCode: $symbolCode,
       padding: ${config.icon.padding},
     );
 
-    if ('${config.theme.dark?.primary ?? ""}'.isNotEmpty) {
+    if ('${config.theme.dark?.background ?? ""}'.isNotEmpty) {
       await _renderIcon(
         tester,
         name: 'app_icon_dark.png',
-        bgColor: _parseColor('${config.theme.dark?.primary ?? "#000000"}'),
-        fgColor: _parseColor('${config.theme.dark?.secondary ?? "#FFFFFF"}'),
+        bgColor: _parseColor('${config.theme.dark?.background ?? "#000000"}'),
+        fgColor: _parseColor('${config.theme.dark?.primary ?? "#FFFFFF"}'),
         symbolCode: $symbolCode,
         padding: ${config.icon.padding},
       );
@@ -167,6 +167,17 @@ Future<void> _renderIcon(
                 IconData(symbolCode, fontFamily: 'MaterialIcons'),
                 color: fgColor,
                 size: 1024 * (1.0 - padding * 2),
+                shadows: [
+                  if (${config.icon.shadow?.enabled ?? false})
+                    Shadow(
+                      color: _parseColor('${config.icon.shadow?.color ?? "#000000"}'),
+                      blurRadius: ${config.icon.shadow?.blur ?? 10.0},
+                      offset: const Offset(
+                        ${config.icon.shadow?.offsetX ?? 0.0},
+                        ${config.icon.shadow?.offsetY ?? 0.0},
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
