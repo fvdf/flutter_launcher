@@ -13,11 +13,23 @@ Une solution tout-en-un pour générer les icônes et splash screens de votre ap
 
 ## Installation
 
-Ajoutez le package à vos `dev_dependencies` :
+Ajoutez le package à vos `dev_dependencies`. 
+
+**Via pub.dev (recommandé une fois publié) :**
 
 ```yaml
 dev_dependencies:
   flutter_launcher: ^0.1.0
+```
+
+**Via Git (en attendant la publication) :**
+
+```yaml
+dev_dependencies:
+  flutter_launcher:
+    git:
+      url: https://github.com/fvdf/flutter_launcher.git
+      ref: main
 ```
 
 ## Configuration
