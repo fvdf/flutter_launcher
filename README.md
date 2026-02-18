@@ -45,6 +45,7 @@ flutter_launcher:
   icon:
     symbol: "search"       # Nom ou code hexa (0xe8b6)
     style: "outlined"      # baseline, outlined, rounded, sharp
+    size: 0.6              # Taille du symbole (0.0 à 1.0)
     padding: 0.18          # Espace (0.0 à 0.5)
     fill: 1
     weight: 700

@@ -76,6 +76,14 @@ class ConfigParser {
       throw Exception('icon.symbol is required');
     }
 
+    final size = yaml['size'] is num ? (yaml['size'] as num).toDouble() : null;
+    double padding =
+        (yaml['padding'] is num ? yaml['padding'] as num : 0.18).toDouble();
+
+    if (size != null) {
+      padding = (1.0 - size) / 2.0;
+    }
+
     return IconConfig(
       symbol: yaml['symbol'].toString(),
       style: yaml['style']?.toString() ?? 'outlined',
@@ -83,8 +91,8 @@ class ConfigParser {
       weight: yaml['weight'] is int ? yaml['weight'] : 700,
       grade: (yaml['grade'] is num ? yaml['grade'] as num : 0.0).toDouble(),
       opticalSize: yaml['opticalSize'] is int ? yaml['opticalSize'] : 48,
-      padding:
-          (yaml['padding'] is num ? yaml['padding'] as num : 0.18).toDouble(),
+      padding: padding,
+      size: size,
       shadow: _parseShadow(yaml['shadow']),
     );
   }
@@ -112,13 +120,23 @@ class ConfigParser {
 
   static SplashConfig _parseSplash(dynamic yaml) {
     if (yaml == null) return SplashConfig();
+
+    final iconSize =
+        yaml['icon_size'] is num ? (yaml['icon_size'] as num).toDouble() : null;
+    double iconPadding =
+        (yaml['icon_padding'] is num ? yaml['icon_padding'] as num : 0.3)
+            .toDouble();
+
+    if (iconSize != null) {
+      iconPadding = (1.0 - iconSize) / 2.0;
+    }
+
     return SplashConfig(
       enabled: yaml['enabled'] is bool ? yaml['enabled'] : true,
       android12: yaml['android12'] is bool ? yaml['android12'] : true,
       fullscreen: yaml['fullscreen'] is bool ? yaml['fullscreen'] : false,
-      iconPadding:
-          (yaml['icon_padding'] is num ? yaml['icon_padding'] as num : 0.3)
-              .toDouble(),
+      iconPadding: iconPadding,
+      iconSize: iconSize,
       branding: _parseBranding(yaml['branding']),
     );
   }

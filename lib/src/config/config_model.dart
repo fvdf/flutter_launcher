@@ -34,6 +34,7 @@ class IconConfig {
   final double grade;
   final int opticalSize;
   final double padding;
+  final double? size;
   final ShadowConfig? shadow;
 
   IconConfig({
@@ -44,6 +45,7 @@ class IconConfig {
     this.grade = 0.0,
     this.opticalSize = 48,
     this.padding = 0.18,
+    this.size,
     this.shadow,
   });
 }
@@ -69,6 +71,7 @@ class SplashConfig {
   final bool android12;
   final bool fullscreen;
   final double iconPadding;
+  final double? iconSize;
   final BrandingConfig? branding;
 
   SplashConfig({
@@ -76,6 +79,7 @@ class SplashConfig {
     this.android12 = true,
     this.fullscreen = false,
     this.iconPadding = 0.35,
+    this.iconSize,
     this.branding,
   });
 }
