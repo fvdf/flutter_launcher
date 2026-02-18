@@ -85,7 +85,18 @@ dev_dependencies:
   }
 
   String _generateTestCode() {
+    final symbolCode = _getSymbolCode(config.icon.symbol);
     final styleSuffix = _getStyleSuffix(config.icon.style);
+
+    Logger.info('Configuration de l\'icône :');
+    Logger.info(
+        '  - Symbole : ${config.icon.symbol} (Code: 0x${symbolCode.toRadixString(16)})');
+    Logger.info('  - Style : ${config.icon.style} (Suffix: $styleSuffix)');
+    Logger.info('  - Fill : ${config.icon.fill}');
+    Logger.info('  - Weight : ${config.icon.weight}');
+    Logger.info('  - Grade : ${config.icon.grade}');
+    Logger.info('  - Optical Size : ${config.icon.opticalSize}');
+    Logger.info('  - Padding : ${config.icon.padding}');
 
     return '''
 import 'dart:io';
@@ -99,7 +110,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Render icons', (WidgetTester tester) async {
-    print('[RENDERER] Début du rendu...');
+    print('[RENDERER] Démarrage du rendu');
+    print('[RENDERER] Config : SymbolCode=0x${symbolCode.toRadixString(16)}, StyleSuffix=$styleSuffix');
     
     tester.view.physicalSize = const Size(1024, 1024);
     tester.view.devicePixelRatio = 1.0;
@@ -119,7 +131,7 @@ void main() {
         fgColor: _parseColor('${config.theme.dark?.secondary ?? "#FFFFFF"}'),
       );
     }
-    print('[RENDERER] Rendu terminé avec succès.');
+    print('[RENDERER] Tous les rendus terminés.');
   });
 }
 
@@ -129,7 +141,7 @@ Future<void> _renderIcon(
   required Color bgColor,
   required Color fgColor,
 }) async {
-  print('  - Rendu de ' + name + '...');
+  print('  [RENDERER] Construction du widget pour ' + name + '...');
   final key = GlobalKey();
   
   await tester.pumpWidget(
@@ -143,7 +155,7 @@ Future<void> _renderIcon(
           color: bgColor,
           child: Center(
             child: Icon(
-              IconData(${_getSymbolCode(config.icon.symbol)}, fontFamily: 'MaterialIcons'),
+              IconData(0x${symbolCode.toRadixString(16)}, fontFamily: 'MaterialIcons$styleSuffix'),
               color: fgColor,
               size: 1024 * (1.0 - ${config.icon.padding} * 2),
             ),
@@ -157,16 +169,15 @@ Future<void> _renderIcon(
 
   final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
   
-  // Utilisation de runAsync pour toutes les opérations lourdes
   await tester.runAsync(() async {
-    print('    * Capture de la surface...');
+    print('    [RENDERER] Capture de la surface...');
     final image = await boundary.toImage(pixelRatio: 1.0);
     
-    print('    * Extraction des pixels (rawRgba)...');
+    print('    [RENDERER] Extraction des pixels...');
     final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     if (byteData == null) throw Exception('byteData est null');
 
-    print('    * Encodage PNG avec package:image...');
+    print('    [RENDERER] Encodage PNG...');
     final rawBytes = byteData.buffer.asUint8List();
     final imgImage = img.Image.fromBytes(
       width: 1024,
@@ -177,12 +188,10 @@ Future<void> _renderIcon(
     
     final pngBytes = img.encodePng(imgImage);
     
-    print('    * Écriture du fichier...');
+    print('    [RENDERER] Écriture de ' + name);
     final file = File('../' + name);
     await file.writeAsBytes(pngBytes);
   });
-  
-  print('  - Fichier écrit : ' + name);
 }
 
 Color _parseColor(String hex) {
