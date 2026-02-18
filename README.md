@@ -9,6 +9,7 @@ Une solution tout-en-un pour générer les icônes et splash screens de votre ap
 - 📱 **Multi-plateformes** : Supporte Android, iOS, Web, Windows, macOS et Linux.
 - 🌓 **Support Dark Mode** : Génère automatiquement des assets pour le mode sombre.
 - 💦 **Splash Screens** : Intégration transparente avec `flutter_native_splash`.
+- ✨ **Vibecoddé** : Ce projet a été entièrement développé avec 💖 (et un peu d'aide de l'IA) par Rudy Dubos.
 
 ## Installation
 
@@ -72,6 +73,10 @@ flutter_launcher:
       position: "bottom"   # top ou bottom
 ```
 
+### Trouver des Symboles
+Vous pouvez rechercher des symboles Material sur le site officiel :
+[Google Fonts Icons](https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Sharp&icon.size=24&icon.color=%231f1f1f)
+
 ## Utilisation
 
 Exécutez la commande suivante à la racine de votre projet :
@@ -92,6 +97,28 @@ dart run flutter_launcher
 2. **Rendering** : Il crée un projet Flutter temporaire pour rendre l'icône choisie (Material Symbol) en haute résolution (1024x1024) via le moteur de rendu de Flutter (`dart:ui`).
 3. **Icons** : Il utilise `flutter_launcher_icons` pour générer toutes les tailles d'icônes pour chaque plateforme.
 4. **Splash** : Il utilise `flutter_native_splash` pour intégrer l'écran de démarrage.
+
+## Publication sur pub.dev
+
+Pour publier ce package sur `pub.dev`, suivez ces étapes :
+
+1.  **Vérification locale** : Assurez-vous que le projet passe les tests et l'analyse.
+    ```bash
+    dart analyze
+    dart test
+    ```
+2.  **Score pub.dev** : Assurez-vous d'avoir un fichier `LICENSE`, `README.md`, `CHANGELOG.md` et un `example/`.
+3.  **Dry Run** : Vérifiez que tout est prêt pour la publication.
+    ```bash
+    dart pub publish --dry-run
+    ```
+4.  **Publication** : Une fois prêt, lancez la commande finale.
+    ```bash
+    dart pub publish
+    ```
+
+> [!NOTE]
+> Les icônes Google (Material Symbols) sont sous licence Apache 2.0 et sont libres d'utilisation. Toutes les dépendances de ce projet sont également sous licences libres (MIT/BSD/Apache).
 
 ## Limitations
 
