@@ -40,7 +40,7 @@ class IconRenderer {
     Logger.step('Préparation du projet de rendu temporaire');
     _prepareRendererProject(rendererDir.path, symbolCode);
 
-    Logger.step('Exécution du rendu Flutter...');
+    Logger.step('Exécution du rendu Flutter');
     await _runRenderer(rendererDir.path);
 
     Logger.success('Images de base générées dans build/flutter_launcher');
@@ -70,8 +70,6 @@ dependencies:
   image: ^4.0.0
 flutter:
   uses-material-design: true
-  assets:
-    - assets/fonts/MaterialIcons-Regular.otf
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -104,8 +102,18 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Render icons', (WidgetTester tester) async {
-    print('[RENDERER] Chargement explicite de la police...');
-    await _loadFont();
+    print('[RENDERER] Démarrage du test');
+    
+    print('[RENDERER] Chargement de la police depuis assets...');
+    try {
+      final fontData = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
+      final loader = FontLoader('MaterialIcons');
+      loader.addFont(Future.value(ByteData.view(fontData.buffer)));
+      await loader.load();
+      print('[RENDERER] Police chargée avec succès.');
+    } catch (e) {
+      print('[RENDERER] ERREUR chargement police: ' + e.toString());
+    }
 
     tester.view.physicalSize = const Size(1024, 1024);
     tester.view.devicePixelRatio = 1.0;
@@ -115,6 +123,8 @@ void main() {
       name: 'app_icon_light.png',
       bgColor: _parseColor('${config.theme.light.primary}'),
       fgColor: _parseColor('${config.theme.light.secondary ?? "#FFFFFF"}'),
+      symbolCode: $symbolCode,
+      padding: ${config.icon.padding},
     );
 
     if ('${config.theme.dark?.primary ?? ""}'.isNotEmpty) {
@@ -123,16 +133,12 @@ void main() {
         name: 'app_icon_dark.png',
         bgColor: _parseColor('${config.theme.dark?.primary ?? "#000000"}'),
         fgColor: _parseColor('${config.theme.dark?.secondary ?? "#FFFFFF"}'),
+        symbolCode: $symbolCode,
+        padding: ${config.icon.padding},
       );
     }
+    print('[RENDERER] Tous les tests terminés.');
   });
-}
-
-Future<void> _loadFont() async {
-  final fontData = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
-  final loader = FontLoader('MaterialIcons');
-  loader.addFont(Future.value(ByteData.view(fontData.buffer)));
-  await loader.load();
 }
 
 Future<void> _renderIcon(
@@ -140,24 +146,28 @@ Future<void> _renderIcon(
   required String name,
   required Color bgColor,
   required Color fgColor,
+  required int symbolCode,
+  required double padding,
 }) async {
-  print('  [RENDERER] Rendu de ' + name + '...');
+  print('  [RENDERER] Début du rendu de ' + name);
   final key = GlobalKey();
   
   await tester.pumpWidget(
     Directionality(
       textDirection: TextDirection.ltr,
-      child: RepaintBoundary(
-        key: key,
-        child: Container(
-          width: 1024,
-          height: 1024,
-          color: bgColor,
-          child: Center(
-            child: Icon(
-              IconData(0x${symbolCode.toRadixString(16)}, fontFamily: 'MaterialIcons'),
-              color: fgColor,
-              size: 1024 * (1.0 - ${config.icon.padding} * 2),
+      child: Center(
+        child: RepaintBoundary(
+          key: key,
+          child: Container(
+            width: 1024,
+            height: 1024,
+            color: bgColor,
+            child: Center(
+              child: Icon(
+                IconData(symbolCode, fontFamily: 'MaterialIcons'),
+                color: fgColor,
+                size: 1024 * (1.0 - padding * 2),
+              ),
             ),
           ),
         ),
@@ -165,27 +175,44 @@ Future<void> _renderIcon(
     ),
   );
 
-  await tester.pumpAndSettle();
-  await Future.delayed(const Duration(milliseconds: 100)); // Petit délai de sécurité
-
-  final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  print('  [RENDERER] Attente du rendu (pump)...');
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
   
+  print('  [RENDERER] Récupération du RenderObject...');
+  final RenderRepaintBoundary boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  
+  print('  [RENDERER] Conversion en image (runAsync)...');
   await tester.runAsync(() async {
-    final image = await boundary.toImage(pixelRatio: 1.0);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (byteData == null) throw Exception('byteData null');
+    try {
+      print('    [STEP] toImage...');
+      final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
+      
+      print('    [STEP] toByteData...');
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (byteData == null) throw Exception('byteData is null');
 
-    final rawBytes = byteData.buffer.asUint8List();
-    final imgImage = img.Image.fromBytes(
-      width: 1024,
-      height: 1024,
-      bytes: rawBytes.buffer,
-      order: img.ChannelOrder.rgba,
-    );
-    
-    final pngBytes = img.encodePng(imgImage);
-    final file = File('../' + name);
-    await file.writeAsBytes(pngBytes);
+      print('    [STEP] Encodage PNG avec package:image...');
+      final Uint8List rawBytes = byteData.buffer.asUint8List();
+      final img.Image? decoded = img.Image.fromBytes(
+        width: 1024,
+        height: 1024,
+        bytes: rawBytes.buffer,
+        order: img.ChannelOrder.rgba,
+      );
+      
+      if (decoded == null) throw Exception('Failed to decode raw bytes');
+      
+      final List<int> pngBytes = img.encodePng(decoded);
+      
+      print('    [STEP] Écriture du fichier ' + name);
+      final file = File('../' + name);
+      await file.writeAsBytes(pngBytes);
+      print('    [SUCCESS] ' + name + ' généré.');
+    } catch (e, stack) {
+      print('    [ERROR] Erreur pendant le rendu : ' + e.toString());
+      print(stack);
+    }
   });
 }
 
@@ -208,7 +235,7 @@ Color _parseColor(String hex) {
     process.stderr.transform(utf8.decoder).listen(Logger.pipe);
 
     final exitCode = await process.exitCode;
-    if (exitCode != 0) throw Exception('Rendu échoué.');
+    if (exitCode != 0) throw Exception('Rendu échoué avec le code $exitCode.');
   }
 
   Future<int> _getSymbolCode(String name, String style) async {
