@@ -60,9 +60,8 @@ class Launcher {
       final renderer = IconRenderer(workingDir, config);
       await renderer.render();
 
-      if (args.renderOnly || args.symbolCheck != null) {
-        Logger.success(
-            'Mode rendu uniquement ou vérification de symbole terminé.');
+      if (args.renderOnly) {
+        Logger.success('Mode rendu uniquement terminé.');
         Logger.info('Consultez les fichiers dans : $workingDir');
         return;
       }
