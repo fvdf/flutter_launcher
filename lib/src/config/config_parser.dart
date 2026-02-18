@@ -116,6 +116,27 @@ class ConfigParser {
       enabled: yaml['enabled'] is bool ? yaml['enabled'] : true,
       android12: yaml['android12'] is bool ? yaml['android12'] : true,
       fullscreen: yaml['fullscreen'] is bool ? yaml['fullscreen'] : false,
+      iconPadding:
+          (yaml['icon_padding'] is num ? yaml['icon_padding'] as num : 0.35)
+              .toDouble(),
+      branding: _parseBranding(yaml['branding']),
+    );
+  }
+
+  static BrandingConfig? _parseBranding(dynamic yaml) {
+    if (yaml == null || yaml['text'] == null) return null;
+
+    final text = yaml['text'].toString();
+    final color = yaml['color']?.toString() ?? '#FFFFFF';
+    _validateHex(color);
+
+    return BrandingConfig(
+      text: text,
+      color: color,
+      fontSize: (yaml['font_size'] is num ? yaml['font_size'] as num : 24.0)
+          .toDouble(),
+      position: yaml['position']?.toString() ?? 'bottom',
+      fontFamily: yaml['font_family']?.toString(),
     );
   }
 

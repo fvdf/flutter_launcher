@@ -43,21 +43,21 @@ class NativeSplashRunner {
   String _generateConfig() {
     String yaml = 'flutter_native_splash:\n';
     yaml += '  color: "${config.theme.light.background ?? "#FFFFFF"}"\n';
-    yaml += '  image: "build/flutter_launcher/app_icon_light.png"\n';
+    yaml += '  image: "build/flutter_launcher/splash_light.png"\n';
 
     if (config.theme.dark != null) {
       yaml += '  color_dark: "${config.theme.dark!.background ?? "#000000"}"\n';
-      yaml += '  image_dark: "build/flutter_launcher/app_icon_dark.png"\n';
+      yaml += '  image_dark: "build/flutter_launcher/splash_dark.png"\n';
     }
 
     if (config.splash.android12) {
       yaml += '  android_12:\n';
       yaml += '    color: "${config.theme.light.background ?? "#FFFFFF"}"\n';
-      yaml += '    image: "build/flutter_launcher/app_icon_light.png"\n';
+      yaml += '    image: "build/flutter_launcher/splash_light.png"\n';
       if (config.theme.dark != null) {
         yaml +=
             '    color_dark: "${config.theme.dark!.background ?? "#000000"}"\n';
-        yaml += '    image_dark: "build/flutter_launcher/app_icon_dark.png"\n';
+        yaml += '    image_dark: "build/flutter_launcher/splash_dark.png"\n';
       }
     }
 

@@ -63,6 +63,12 @@ flutter_launcher:
     enabled: true
     android12: true
     fullscreen: false
+    icon_padding: 0.35      # Padding de l'icône sur le Splash (plus grand = icône plus petite)
+    branding:
+      text: "Ma Super App\nBy Rudy" # Texte sur 1 ou 2 lignes
+      color: "#FFFFFF"     # Couleur du texte
+      font_size: 24.0      # Taille de la police
+      position: "bottom"   # top ou bottom
 ```
 
 ## Utilisation

@@ -68,10 +68,30 @@ class SplashConfig {
   final bool enabled;
   final bool android12;
   final bool fullscreen;
+  final double iconPadding;
+  final BrandingConfig? branding;
 
   SplashConfig({
     this.enabled = true,
     this.android12 = true,
     this.fullscreen = false,
+    this.iconPadding = 0.35,
+    this.branding,
+  });
+}
+
+class BrandingConfig {
+  final String text;
+  final String color;
+  final double fontSize;
+  final String position; // 'top' or 'bottom'
+  final String? fontFamily;
+
+  BrandingConfig({
+    required this.text,
+    this.color = '#FFFFFF',
+    this.fontSize = 24.0,
+    this.position = 'bottom',
+    this.fontFamily,
   });
 }

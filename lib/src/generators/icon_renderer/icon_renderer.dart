@@ -127,6 +127,18 @@ void main() {
       padding: ${config.icon.padding},
     );
 
+    if (config.splash.enabled) {
+      await _renderIcon(
+        tester,
+        name: 'splash_light.png',
+        bgColor: _parseColor('${config.theme.light.background ?? "#FFFFFF"}'),
+        fgColor: _parseColor('${config.theme.light.primary}'),
+        symbolCode: $symbolCode,
+        padding: ${config.splash.iconPadding},
+        branding: config.splash.branding,
+      );
+    }
+
     if ('${config.theme.dark?.background ?? ""}'.isNotEmpty) {
       await _renderIcon(
         tester,
@@ -136,6 +148,18 @@ void main() {
         symbolCode: $symbolCode,
         padding: ${config.icon.padding},
       );
+
+      if (config.splash.enabled) {
+        await _renderIcon(
+          tester,
+          name: 'splash_dark.png',
+          bgColor: _parseColor('${config.theme.dark?.background ?? "#000000"}'),
+          fgColor: _parseColor('${config.theme.dark?.primary ?? "#FFFFFF"}'),
+          symbolCode: $symbolCode,
+          padding: ${config.splash.iconPadding},
+          branding: config.splash.branding,
+        );
+      }
     }
     print('[RENDERER] Tous les tests terminés.');
   });
@@ -148,6 +172,7 @@ Future<void> _renderIcon(
   required Color fgColor,
   required int symbolCode,
   required double padding,
+  BrandingConfig? branding,
 }) async {
   print('  [RENDERER] Début du rendu de ' + name);
   final key = GlobalKey();
@@ -162,23 +187,56 @@ Future<void> _renderIcon(
             width: 1024,
             height: 1024,
             color: bgColor,
-            child: Center(
-              child: Icon(
-                IconData(symbolCode, fontFamily: 'MaterialIcons'),
-                color: fgColor,
-                size: 1024 * (1.0 - padding * 2),
-                shadows: [
-                  if (${config.icon.shadow?.enabled ?? false})
-                    Shadow(
-                      color: _parseColor('${config.icon.shadow?.color ?? "#000000"}'),
-                      blurRadius: ${config.icon.shadow?.blur ?? 10.0},
-                      offset: const Offset(
-                        ${config.icon.shadow?.offsetX ?? 0.0},
-                        ${config.icon.shadow?.offsetY ?? 0.0},
+            child: Stack(
+              children: [
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (branding != null && branding.position == 'top') ...[
+                        Text(
+                          branding.text,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _parseColor(branding.color),
+                            fontSize: branding.fontSize * 2, // Scale up for 1024x1024
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                      Icon(
+                        IconData(symbolCode, fontFamily: 'MaterialIcons'),
+                        color: fgColor,
+                        size: 1024 * (1.0 - padding * 2),
+                        shadows: [
+                          if (${config.icon.shadow?.enabled ?? false})
+                            Shadow(
+                              color: _parseColor('${config.icon.shadow?.color ?? "#000000"}'),
+                              blurRadius: ${config.icon.shadow?.blur ?? 10.0},
+                              offset: const Offset(
+                                ${config.icon.shadow?.offsetX ?? 0.0},
+                                ${config.icon.shadow?.offsetY ?? 0.0},
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                ],
-              ),
+                      if (branding != null && branding.position == 'bottom') ...[
+                        const SizedBox(height: 40),
+                        Text(
+                          branding.text,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _parseColor(branding.color),
+                            fontSize: branding.fontSize * 2, // Scale up
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
