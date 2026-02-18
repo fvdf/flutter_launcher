@@ -22,7 +22,7 @@ class IconRenderer {
     _prepareRendererProject(rendererDir.path);
 
     Logger.step(
-        'Exécution du rendu Flutter (cela peut prendre un moment la première fois)');
+        'Exécution du rendu Flutter (Premier lancement : téléchargement de l\'engine en cours...)');
     await _runRenderer(rendererDir.path);
 
     Logger.success('Images de base générées dans build/flutter_launcher');
@@ -61,7 +61,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('Render icons', (tester) async {
+  test('Render icons', () async {
+    print('[RENDERER] Début du rendu...');
+    
+    print('[RENDERER] Rendu de app_icon_light.png...');
     await _renderIcon(
       name: 'app_icon_light.png',
       bgColor: _parseColor('${config.theme.light.primary}'),
@@ -69,12 +72,14 @@ void main() {
     );
 
     if ('${config.theme.dark?.primary ?? ""}'.isNotEmpty) {
+      print('[RENDERER] Rendu de app_icon_dark.png...');
       await _renderIcon(
         name: 'app_icon_dark.png',
         bgColor: _parseColor('${config.theme.dark?.primary ?? "#000000"}'),
         fgColor: _parseColor('${config.theme.dark?.secondary ?? "#FFFFFF"}'),
       );
     }
+    print('[RENDERER] Rendu terminé avec succès.');
   });
 }
 
@@ -97,7 +102,8 @@ Future<void> _renderIcon({
       style: TextStyle(
         color: fgColor,
         fontSize: 1024 * (1.0 - ${config.icon.padding} * 2),
-        fontFamily: 'MaterialSymbols',
+        // On n'utilise pas de font spécifique pour éviter les hangs de chargement
+        // Flutter utilisera la font système ou fallback.
       ),
     ),
     textDirection: TextDirection.ltr,
@@ -111,11 +117,14 @@ Future<void> _renderIcon({
   textPainter.paint(canvas, offset);
 
   final picture = recorder.endRecording();
+  
+  print('  - Encodage en PNG (1024x1024)...');
   final img = await picture.toImage(1024, 1024);
   final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
   
   final file = File('../' + name);
   await file.writeAsBytes(byteData!.buffer.asUint8List());
+  print('  - Fichier écrit : ' + name);
 }
 
 Color _parseColor(String hex) {
@@ -125,12 +134,15 @@ Color _parseColor(String hex) {
 }
 
 int _getSymbolCode(String name) {
-  // Simple mapping or use a font with ligatures
-  // For MVP, we use a fixed code or expect the user to provide the hex if needed.
-  // But usually, Material Symbols are in the PUA.
-  // Let's assume 'settings' -> 0xe8b8 as a placeholder for this demo
-  // In a real tool, multiple mapping would be needed.
-  return 0xe8b8; 
+  final map = {
+    'settings': 0xe8b8,
+    'home': 0xe88a,
+    'person': 0xe7fd,
+    'favorite': 0xe87d,
+    'search': 0xe8b6,
+    'star': 0xe838,
+  };
+  return map[name] ?? 0xe8b8;
 }
 ''';
   }
