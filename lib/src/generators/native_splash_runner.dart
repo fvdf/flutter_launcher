@@ -50,7 +50,16 @@ class NativeSplashRunner {
       yaml += '  image_dark: "build/flutter_launcher/app_icon_dark.png"\n';
     }
 
-    yaml += '  android_12: ${config.splash.android12}\n';
+    if (config.splash.android12) {
+      yaml += '  android_12:\n';
+      yaml += '    color: "${config.theme.light.primary}"\n';
+      yaml += '    image: "build/flutter_launcher/app_icon_light.png"\n';
+      if (config.theme.dark != null) {
+        yaml += '    color_dark: "${config.theme.dark!.primary}"\n';
+        yaml += '    image_dark: "build/flutter_launcher/app_icon_dark.png"\n';
+      }
+    }
+
     yaml += '  fullscreen: ${config.splash.fullscreen}\n';
 
     // Platforms (Filter only supported ones)
