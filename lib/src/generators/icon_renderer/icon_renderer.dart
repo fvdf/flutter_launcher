@@ -18,6 +18,22 @@ class IconRenderer {
       rendererDir.createSync(recursive: true);
     }
 
+    // On cherche le SDK Flutter pour copier la font
+    final flutterSdkPath = await _getFlutterSdkPath();
+    final fontSource = p.join(flutterSdkPath, 'bin', 'cache', 'artifacts',
+        'material_fonts', 'MaterialIcons-Regular.otf');
+    final fontDestDir = Directory(p.join(rendererDir.path, 'assets', 'fonts'));
+    if (!fontDestDir.existsSync()) fontDestDir.createSync(recursive: true);
+
+    final fontFile = File(fontSource);
+    if (fontFile.existsSync()) {
+      Logger.debug('Copie de la police MaterialIcons depuis le SDK...');
+      fontFile.copySync(p.join(fontDestDir.path, 'MaterialIcons-Regular.otf'));
+    } else {
+      Logger.warn(
+          'Police MaterialIcons introuvable dans le SDK ($fontSource). Le rendu pourrait échouer.');
+    }
+
     Logger.step('Préparation du projet de rendu temporaire');
     _prepareRendererProject(rendererDir.path);
 
@@ -26,6 +42,17 @@ class IconRenderer {
     await _runRenderer(rendererDir.path);
 
     Logger.success('Images de base générées dans build/flutter_launcher');
+  }
+
+  Future<String> _getFlutterSdkPath() async {
+    try {
+      final res = await Process.run('which', ['flutter']);
+      if (res.exitCode == 0) {
+        final flutterBin = res.stdout.toString().trim();
+        return p.dirname(p.dirname(flutterBin));
+      }
+    } catch (_) {}
+    return ''; // Fallback empty
   }
 
   void _prepareRendererProject(String path) {
@@ -37,8 +64,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  image: ^4.0.0
 flutter:
   uses-material-design: true
+  fonts:
+    - family: MaterialIcons
+      fonts:
+        - asset: assets/fonts/MaterialIcons-Regular.otf
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -61,15 +93,14 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 void main() {
-  // Cette fonction est nécessaire pour que les tests Flutter chargent les polices par défaut
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Render icons', (WidgetTester tester) async {
     print('[RENDERER] Début du rendu...');
     
-    // On doit forcer une taille de fenêtre pour le rendu
     tester.view.physicalSize = const Size(1024, 1024);
     tester.view.devicePixelRatio = 1.0;
 
@@ -98,7 +129,7 @@ Future<void> _renderIcon(
   required Color bgColor,
   required Color fgColor,
 }) async {
-  print('  - Construction du widget pour ' + name + '...');
+  print('  - Rendu de ' + name + '...');
   final key = GlobalKey();
   
   await tester.pumpWidget(
@@ -112,7 +143,7 @@ Future<void> _renderIcon(
           color: bgColor,
           child: Center(
             child: Icon(
-              IconData(${_getSymbolCode(config.icon.symbol)}, fontFamily: 'MaterialIcons$styleSuffix'),
+              IconData(${_getSymbolCode(config.icon.symbol)}, fontFamily: 'MaterialIcons'),
               color: fgColor,
               size: 1024 * (1.0 - ${config.icon.padding} * 2),
             ),
@@ -122,24 +153,34 @@ Future<void> _renderIcon(
     ),
   );
 
-  print('  - Attente du rendu (pump)...');
-  await tester.pump(); 
+  await tester.pump();
 
-  print('  - Capture de l image...');
   final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
-  final image = await boundary.toImage(pixelRatio: 1.0);
   
-  print('  - Encodage PNG (via runAsync)...');
-  final byteData = await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.png));
-  
-  if (byteData == null) {
-    print('  [ERREUR] byteData est null');
-    throw Exception('Échec de l encodage PNG');
-  }
-  
-  print('  - Écriture du fichier (via runAsync)...');
-  final file = File('../' + name);
-  await tester.runAsync(() => file.writeAsBytes(byteData.buffer.asUint8List()));
+  // Utilisation de runAsync pour toutes les opérations lourdes
+  await tester.runAsync(() async {
+    print('    * Capture de la surface...');
+    final image = await boundary.toImage(pixelRatio: 1.0);
+    
+    print('    * Extraction des pixels (rawRgba)...');
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (byteData == null) throw Exception('byteData est null');
+
+    print('    * Encodage PNG avec package:image...');
+    final rawBytes = byteData.buffer.asUint8List();
+    final imgImage = img.Image.fromBytes(
+      width: 1024,
+      height: 1024,
+      bytes: rawBytes.buffer,
+      order: img.ChannelOrder.rgba,
+    );
+    
+    final pngBytes = img.encodePng(imgImage);
+    
+    print('    * Écriture du fichier...');
+    final file = File('../' + name);
+    await file.writeAsBytes(pngBytes);
+  });
   
   print('  - Fichier écrit : ' + name);
 }
@@ -178,8 +219,7 @@ Color _parseColor(String hex) {
     final exitCode = await process.exitCode;
 
     if (exitCode != 0) {
-      throw Exception(
-          'Flutter test failed to render icons. Execute with --verbose for more info.');
+      throw Exception('Rendu échoué.');
     }
   }
 
