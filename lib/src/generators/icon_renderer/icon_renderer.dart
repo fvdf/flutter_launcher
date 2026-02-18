@@ -38,6 +38,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+flutter:
+  uses-material-design: true
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -54,6 +56,8 @@ dev_dependencies:
   }
 
   String _generateTestCode() {
+    final styleSuffix = _getStyleSuffix(config.icon.style);
+
     return '''
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -102,8 +106,7 @@ Future<void> _renderIcon({
       style: TextStyle(
         color: fgColor,
         fontSize: 1024 * (1.0 - ${config.icon.padding} * 2),
-        // On n'utilise pas de font spécifique pour éviter les hangs de chargement
-        // Flutter utilisera la font système ou fallback.
+        fontFamily: 'MaterialIcons$styleSuffix',
       ),
     ),
     textDirection: TextDirection.ltr,
@@ -132,19 +135,20 @@ Color _parseColor(String hex) {
   if (hex.length == 6) hex = 'FF' + hex;
   return Color(int.parse(hex, radix: 16));
 }
-
-int _getSymbolCode(String name) {
-  final map = {
-    'settings': 0xe8b8,
-    'home': 0xe88a,
-    'person': 0xe7fd,
-    'favorite': 0xe87d,
-    'search': 0xe8b6,
-    'star': 0xe838,
-  };
-  return map[name] ?? 0xe8b8;
-}
 ''';
+  }
+
+  String _getStyleSuffix(String style) {
+    switch (style.toLowerCase()) {
+      case 'rounded':
+        return '_Rounded';
+      case 'sharp':
+        return '_Sharp';
+      case 'outlined':
+        return '_Outlined';
+      default:
+        return '';
+    }
   }
 
   Future<void> _runRenderer(String path) async {
@@ -165,10 +169,7 @@ int _getSymbolCode(String name) {
     }
   }
 
-  // Helper for symbol mapping (simplified)
   int _getSymbolCode(String name) {
-    // Ideally we would have a full map, but for the sake of the exercise
-    // we'll use a few common ones or a default.
     final map = {
       'settings': 0xe8b8,
       'home': 0xe88a,
@@ -176,7 +177,57 @@ int _getSymbolCode(String name) {
       'favorite': 0xe87d,
       'search': 0xe8b6,
       'star': 0xe838,
+      'add': 0xe145,
+      'menu': 0xe5d2,
+      'close': 0xe5cd,
+      'check': 0xe5ca,
+      'notifications': 0xe7f4,
+      'mail': 0xe158,
+      'camera': 0xe3af,
+      'image': 0xe3f4,
+      'play_arrow': 0xe037,
+      'pause': 0xe034,
+      'stop': 0xe047,
+      'shopping_cart': 0xe8cc,
+      'info': 0xe88e,
+      'help': 0xe887,
+      'warning': 0xe002,
+      'error': 0xe000,
+      'account_circle': 0xe853,
+      'arrow_forward': 0xe5c8,
+      'arrow_back': 0xe5c4,
+      'refresh': 0xe5d5,
+      'share': 0xe80d,
+      'thumb_up': 0xe8dc,
+      'thumb_down': 0xe8db,
+      'visibility': 0xe8f4,
+      'visibility_off': 0xe8f5,
+      'lock': 0xe897,
+      'unlock': 0xe898,
+      'map': 0xe55b,
+      'place': 0xe55f,
+      'phone': 0xe0cd,
+      'email': 0xe0be,
+      'event': 0xe878,
+      'schedule': 0xe8b5,
+      'cloud': 0xe2bd,
+      'download': 0xf090,
+      'upload': 0xf09b,
+      'delete': 0xe872,
+      'edit': 0xe3c9,
+      'save': 0xe161,
+      'rocket': 0xeba5,
+      'bolt': 0xea0b,
+      'eco': 0xea35,
+      'pets': 0xe91d,
+      'flight': 0xe539,
+      'directions_car': 0xe531,
     };
-    return map[name] ?? 0xe8b8;
+
+    if (name.startsWith('0x')) {
+      return int.tryParse(name.substring(2), radix: 16) ?? 0xe8b8;
+    }
+
+    return map[name.toLowerCase()] ?? 0xe8b8;
   }
 }
