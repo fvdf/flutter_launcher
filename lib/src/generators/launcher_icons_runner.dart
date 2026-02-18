@@ -36,7 +36,7 @@ class LauncherIconsRunner {
   }
 
   String _generateConfig() {
-    final Map<String, dynamic> platformsConfig = {
+    final Map<String, bool> pMap = {
       'android': config.platforms['android'] ?? false,
       'ios': config.platforms['ios'] ?? false,
       'web': config.platforms['web'] ?? false,
@@ -52,16 +52,38 @@ class LauncherIconsRunner {
       yaml += '  image_path_dark: "build/flutter_launcher/app_icon_dark.png"\n';
     }
 
-    platformsConfig.forEach((key, value) {
-      if (value) {
-        yaml += '  $key: true\n';
-      }
-    });
-
-    if (platformsConfig['android'] == true) {
+    // Android
+    if (pMap['android'] == true) {
+      yaml += '  android: true\n';
       yaml += '  adaptive_icon_background: "${config.theme.light.primary}"\n';
       yaml +=
           '  adaptive_icon_foreground: "build/flutter_launcher/app_icon_light.png"\n';
+    }
+
+    // iOS
+    if (pMap['ios'] == true) {
+      yaml += '  ios: true\n';
+    }
+
+    // Web (Needs a Map)
+    if (pMap['web'] == true) {
+      yaml += '  web:\n';
+      yaml += '    generate: true\n';
+      yaml += '    image_path: "build/flutter_launcher/app_icon_light.png"\n';
+    }
+
+    // Desktop Platforms (Usually need Maps in newer versions)
+    if (pMap['windows'] == true) {
+      yaml += '  windows:\n';
+      yaml += '    generate: true\n';
+    }
+    if (pMap['macos'] == true) {
+      yaml += '  macos:\n';
+      yaml += '    generate: true\n';
+    }
+    if (pMap['linux'] == true) {
+      yaml += '  linux:\n';
+      yaml += '    generate: true\n';
     }
 
     return yaml;
