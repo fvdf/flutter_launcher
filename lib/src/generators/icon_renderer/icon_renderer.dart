@@ -78,6 +78,13 @@ dependencies:
   image: ^4.0.0
 flutter:
   uses-material-design: true
+  fonts:
+    - family: MaterialIcons
+      fonts:
+        - asset: assets/fonts/MaterialIcons-Regular.otf
+    - family: SplashBranding
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -113,23 +120,26 @@ void main() {
     print('[RENDERER] Démarrage du test');
     
     print('[RENDERER] Chargement des polices...');
-    try {
-      // MaterialIcons
-      final iconFont = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
-      final iconLoader = FontLoader('MaterialIcons');
-      iconLoader.addFont(Future.value(ByteData.view(iconFont.buffer)));
-      await iconLoader.load();
+    await tester.runAsync(() async {
+      try {
+        // MaterialIcons
+        final iconFont = File('assets/fonts/MaterialIcons-Regular.otf').readAsBytesSync();
+        final iconLoader = FontLoader('MaterialIcons');
+        iconLoader.addFont(Future.value(ByteData.view(iconFont.buffer)));
+        await iconLoader.load();
 
-      // Roboto (pour le texte)
-      final robotoFont = File('assets/fonts/Roboto-Regular.ttf').readAsBytesSync();
-      final robotoLoader = FontLoader('Roboto');
-      robotoLoader.addFont(Future.value(ByteData.view(robotoFont.buffer)));
-      await robotoLoader.load();
+        // SplashBranding (Roboto)
+        final robotoFont = File('assets/fonts/Roboto-Regular.ttf').readAsBytesSync();
+        final robotoLoader = FontLoader('SplashBranding');
+        robotoLoader.addFont(Future.value(ByteData.view(robotoFont.buffer)));
+        await robotoLoader.load();
 
-      print('[RENDERER] Polices chargées avec succès.');
-    } catch (e) {
-      print('[RENDERER] ERREUR chargement polices: ' + e.toString());
-    }
+        print('[RENDERER] Polices chargées avec succès.');
+      } catch (e, s) {
+        print('[RENDERER] ERREUR chargement polices: ' + e.toString());
+        print(s);
+      }
+    });
 
     tester.view.physicalSize = const Size(1024, 1024);
     tester.view.devicePixelRatio = 1.0;
@@ -204,66 +214,72 @@ Future<void> _renderIcon(
   await tester.pumpWidget(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Roboto'),
-      home: Center(
-        child: RepaintBoundary(
-          key: key,
-          child: Container(
-            width: 1024,
-            height: 1024,
-            color: bgColor,
-            child: Stack(
-              children: [
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (branding != null && branding.position == 'top') ...[
-                        Text(
-                          branding.text,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _parseColor(branding.color),
-                            fontSize: branding.fontSize * 2.5, // Scale up for 1024x1024
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 60),
-                      ],
-                      Icon(
-                        IconData(symbolCode, fontFamily: 'MaterialIcons'),
-                        color: fgColor,
-                        size: 1024 * (1.0 - padding * 2),
-                        shadows: [
-                          if (${config.icon.shadow?.enabled ?? false})
-                            Shadow(
-                              color: _parseColor('${config.icon.shadow?.color ?? "#000000"}'),
-                              blurRadius: ${config.icon.shadow?.blur ?? 10.0},
-                              offset: const Offset(
-                                ${config.icon.shadow?.offsetX ?? 0.0},
-                                ${config.icon.shadow?.offsetY ?? 0.0},
-                              ),
+      theme: ThemeData(fontFamily: 'SplashBranding'),
+      home: Material(
+        type: MaterialType.transparency,
+        child: Center(
+          child: RepaintBoundary(
+            key: key,
+            child: Container(
+              width: 1024,
+              height: 1024,
+              color: bgColor,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (branding != null && branding.position == 'top') ...[
+                          Text(
+                            branding.text,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'SplashBranding',
+                              color: _parseColor(branding.color),
+                              fontSize: branding.fontSize * 2.5,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
                             ),
-                        ],
-                      ),
-                      if (branding != null && branding.position == 'bottom') ...[
-                        const SizedBox(height: 60),
-                        Text(
-                          branding.text,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _parseColor(branding.color),
-                            fontSize: branding.fontSize * 2.5,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
                           ),
+                          const SizedBox(height: 80),
+                        ],
+                        Icon(
+                          IconData(symbolCode, fontFamily: 'MaterialIcons'),
+                          color: fgColor,
+                          size: 1024 * (1.0 - padding * 2),
+                          shadows: [
+                            if (${config.icon.shadow?.enabled ?? false})
+                              Shadow(
+                                color: _parseColor('${config.icon.shadow?.color ?? "#000000"}'),
+                                blurRadius: ${config.icon.shadow?.blur ?? 10.0},
+                                offset: const Offset(
+                                  ${config.icon.shadow?.offsetX ?? 0.0},
+                                  ${config.icon.shadow?.offsetY ?? 0.0},
+                                ),
+                              ),
+                          ],
                         ),
+                        if (branding != null && branding.position == 'bottom') ...[
+                          const SizedBox(height: 80),
+                          Text(
+                            branding.text,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'SplashBranding',
+                              color: _parseColor(branding.color),
+                              fontSize: branding.fontSize * 2.5,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

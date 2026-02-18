@@ -117,7 +117,7 @@ class ConfigParser {
       android12: yaml['android12'] is bool ? yaml['android12'] : true,
       fullscreen: yaml['fullscreen'] is bool ? yaml['fullscreen'] : false,
       iconPadding:
-          (yaml['icon_padding'] is num ? yaml['icon_padding'] as num : 0.35)
+          (yaml['icon_padding'] is num ? yaml['icon_padding'] as num : 0.3)
               .toDouble(),
       branding: _parseBranding(yaml['branding']),
     );
