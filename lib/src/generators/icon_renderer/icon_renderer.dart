@@ -129,13 +129,18 @@ Future<void> _renderIcon(
   final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
   final image = await boundary.toImage(pixelRatio: 1.0);
   
-  print('  - Encodage PNG...');
-  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  print('  - Encodage PNG (via runAsync)...');
+  final byteData = await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.png));
   
-  if (byteData == null) throw Exception('Échec de la capture de l image');
+  if (byteData == null) {
+    print('  [ERREUR] byteData est null');
+    throw Exception('Échec de l encodage PNG');
+  }
   
+  print('  - Écriture du fichier (via runAsync)...');
   final file = File('../' + name);
-  await file.writeAsBytes(byteData.buffer.asUint8List());
+  await tester.runAsync(() => file.writeAsBytes(byteData.buffer.asUint8List()));
+  
   print('  - Fichier écrit : ' + name);
 }
 
