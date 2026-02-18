@@ -1,0 +1,23 @@
+name: flutter_launcher
+description: A powerful CLI tool to generate Flutter app icons and splash screens from a single configuration.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+executables:
+  flutter_launcher: flutter_launcher
+
+dependencies:
+  args: ^2.4.2
+  yaml: ^3.1.2
+  path: ^1.8.3
+  file: ^7.0.0
+  image: ^4.1.3
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0

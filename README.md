@@ -1,0 +1,80 @@
+# Flutter Launcher
+
+Une solution tout-en-un pour générer les icônes et splash screens de votre application Flutter à partir d'une configuration unique dans le `pubspec.yaml`.
+
+## Caractéristiques
+
+- 🚀 **Commande unique** : `dart run flutter_launcher`
+- 🎨 **Rendu automatique** : Génère des icônes à partir de Material Symbols (via Flutter rendering).
+- 📱 **Multi-plateformes** : Supporte Android, iOS, Web, Windows, macOS et Linux.
+- 🌓 **Support Dark Mode** : Génère automatiquement des assets pour le mode sombre.
+- 💦 **Splash Screens** : Intégration transparente avec `flutter_native_splash`.
+
+## Installation
+
+Ajoutez le package à vos `dev_dependencies` :
+
+```yaml
+dev_dependencies:
+  flutter_launcher: ^0.1.0
+```
+
+## Configuration
+
+Ajoutez une section `flutter_launcher` dans votre `pubspec.yaml` :
+
+```yaml
+flutter_launcher:
+  platforms:
+    android: true
+    ios: true
+    web: true
+    macos: true
+
+  theme:
+    light:
+      primary: "#E91E63"
+      secondary: "#FFFFFF"
+    dark:
+      primary: "#AD1457"
+      secondary: "#E1E1E1"
+
+  icon:
+    symbol: "settings"
+    padding: 0.18
+
+  splash:
+    enabled: true
+    android12: true
+    fullscreen: false
+```
+
+## Utilisation
+
+Exécutez la commande suivante à la racine de votre projet :
+
+```bash
+dart run flutter_launcher
+```
+
+### Options CLI
+
+- `--clean` : Supprime les fichiers temporaires dans `build/flutter_launcher` avant de commencer.
+- `--verbose` : Affiche les logs détaillés des outils sous-jacents.
+- `--dry-run` : Simule l'exécution sans modifier les fichiers du projet.
+
+## Comment ça marche ?
+
+1. **Parsing** : Le tool lit votre `pubspec.yaml` et valide la configuration.
+2. **Rendering** : Il crée un projet Flutter temporaire pour rendre l'icône choisie (Material Symbol) en haute résolution (1024x1024) via le moteur de rendu de Flutter (`dart:ui`).
+3. **Icons** : Il utilise `flutter_launcher_icons` pour générer toutes les tailles d'icônes pour chaque plateforme.
+4. **Splash** : Il utilise `flutter_native_splash` pour intégrer l'écran de démarrage.
+
+## Limitations
+
+- **Dark Icons** : Le switch automatique de l'icône d'application en fonction du thème système n'est pas supporté nativement par toutes les plateformes (ex: iOS limite cela). Les assets sont générés, mais l'intégration dépend des capacités de l'OS.
+- **Symboles** : Pour le moment, une liste restreinte de symboles est supportée par défaut. Vous pouvez étendre le mapping dans `lib/src/generators/icon_renderer/icon_renderer.dart`.
+
+## Licence
+
+MIT - Rudy Dubos
