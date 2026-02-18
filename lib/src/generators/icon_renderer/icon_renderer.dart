@@ -127,7 +127,7 @@ void main() {
       padding: ${config.icon.padding},
     );
 
-    if (config.splash.enabled) {
+    if (${config.splash.enabled}) {
       await _renderIcon(
         tester,
         name: 'splash_light.png',
@@ -135,7 +135,7 @@ void main() {
         fgColor: _parseColor('${config.theme.light.primary}'),
         symbolCode: $symbolCode,
         padding: ${config.splash.iconPadding},
-        branding: config.splash.branding,
+        branding: ${config.splash.branding != null ? "BrandingConfig(text: r'''${config.splash.branding!.text}''', color: '${config.splash.branding!.color}', fontSize: ${config.splash.branding!.fontSize}, position: '${config.splash.branding!.position}')" : "null"},
       );
     }
 
@@ -149,7 +149,7 @@ void main() {
         padding: ${config.icon.padding},
       );
 
-      if (config.splash.enabled) {
+      if (${config.splash.enabled}) {
         await _renderIcon(
           tester,
           name: 'splash_dark.png',
@@ -157,12 +157,20 @@ void main() {
           fgColor: _parseColor('${config.theme.dark?.primary ?? "#FFFFFF"}'),
           symbolCode: $symbolCode,
           padding: ${config.splash.iconPadding},
-          branding: config.splash.branding,
+          branding: ${config.splash.branding != null ? "BrandingConfig(text: r'''${config.splash.branding!.text}''', color: '${config.splash.branding!.color}', fontSize: ${config.splash.branding!.fontSize}, position: '${config.splash.branding!.position}')" : "null"},
         );
       }
     }
     print('[RENDERER] Tous les tests terminés.');
   });
+}
+
+class BrandingConfig {
+  final String text;
+  final String color;
+  final double fontSize;
+  final String position;
+  BrandingConfig({required this.text, required this.color, required this.fontSize, required this.position});
 }
 
 Future<void> _renderIcon(
