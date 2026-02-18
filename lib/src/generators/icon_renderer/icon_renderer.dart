@@ -98,27 +98,23 @@ Future<void> _renderIcon(
   required Color bgColor,
   required Color fgColor,
 }) async {
-  print('  - Rendu de ' + name + '...');
-  
-  // Utilisation d'un RepaintBoundary pour capturer l'image
+  print('  - Construction du widget pour ' + name + '...');
   final key = GlobalKey();
   
   await tester.pumpWidget(
     Directionality(
       textDirection: TextDirection.ltr,
-      child: Center(
-        child: RepaintBoundary(
-          key: key,
-          child: Container(
-            width: 1024,
-            height: 1024,
-            color: bgColor,
-            child: Center(
-              child: Icon(
-                IconData(${_getSymbolCode(config.icon.symbol)}, fontFamily: 'MaterialIcons$styleSuffix'),
-                color: fgColor,
-                size: 1024 * (1.0 - ${config.icon.padding} * 2),
-              ),
+      child: RepaintBoundary(
+        key: key,
+        child: Container(
+          width: 1024,
+          height: 1024,
+          color: bgColor,
+          child: Center(
+            child: Icon(
+              IconData(${_getSymbolCode(config.icon.symbol)}, fontFamily: 'MaterialIcons$styleSuffix'),
+              color: fgColor,
+              size: 1024 * (1.0 - ${config.icon.padding} * 2),
             ),
           ),
         ),
@@ -126,11 +122,14 @@ Future<void> _renderIcon(
     ),
   );
 
-  // On attend que tout soit bien rendu (incluant les polices si possible)
-  await tester.pumpAndSettle();
+  print('  - Attente du rendu (pump)...');
+  await tester.pump(); 
 
+  print('  - Capture de l image...');
   final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
   final image = await boundary.toImage(pixelRatio: 1.0);
+  
+  print('  - Encodage PNG...');
   final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
   
   if (byteData == null) throw Exception('Échec de la capture de l image');
