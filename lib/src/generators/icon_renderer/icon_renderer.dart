@@ -30,7 +30,6 @@ class IconRenderer {
 
   void _prepareRendererProject(String path) {
     Logger.debug('Création du fichier pubspec.yaml du renderer...');
-    // 1. pubspec.yaml
     File(p.join(path, 'pubspec.yaml')).writeAsStringSync('''
 name: launcher_icon_renderer
 environment:
@@ -46,13 +45,11 @@ dev_dependencies:
 ''');
 
     Logger.debug('Création du code de test de rendu...');
-    // 2. test/render_test.dart
     final testDir = Directory(p.join(path, 'test'));
     if (!testDir.existsSync()) testDir.createSync();
 
-    File(
-      p.join(path, 'test', 'render_test.dart'),
-    ).writeAsStringSync(_generateTestCode());
+    File(p.join(path, 'test', 'render_test.dart'))
+        .writeAsStringSync(_generateTestCode());
   }
 
   String _generateTestCode() {
@@ -62,22 +59,30 @@ dev_dependencies:
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Render icons', () async {
+  // Cette fonction est nécessaire pour que les tests Flutter chargent les polices par défaut
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('Render icons', (WidgetTester tester) async {
     print('[RENDERER] Début du rendu...');
     
-    print('[RENDERER] Rendu de app_icon_light.png...');
+    // On doit forcer une taille de fenêtre pour le rendu
+    tester.view.physicalSize = const Size(1024, 1024);
+    tester.view.devicePixelRatio = 1.0;
+
     await _renderIcon(
+      tester,
       name: 'app_icon_light.png',
       bgColor: _parseColor('${config.theme.light.primary}'),
       fgColor: _parseColor('${config.theme.light.secondary ?? "#FFFFFF"}'),
     );
 
     if ('${config.theme.dark?.primary ?? ""}'.isNotEmpty) {
-      print('[RENDERER] Rendu de app_icon_dark.png...');
       await _renderIcon(
+        tester,
         name: 'app_icon_dark.png',
         bgColor: _parseColor('${config.theme.dark?.primary ?? "#000000"}'),
         fgColor: _parseColor('${config.theme.dark?.secondary ?? "#FFFFFF"}'),
@@ -87,46 +92,51 @@ void main() {
   });
 }
 
-Future<void> _renderIcon({
+Future<void> _renderIcon(
+  WidgetTester tester, {
   required String name,
   required Color bgColor,
   required Color fgColor,
 }) async {
-  final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, 1024, 1024));
+  print('  - Rendu de ' + name + '...');
   
-  // Background
-  final paint = Paint()..color = bgColor;
-  canvas.drawRect(Rect.fromLTWH(0, 0, 1024, 1024), paint);
-
-  // Symbol
-  final textPainter = TextPainter(
-    text: TextSpan(
-      text: String.fromCharCode(${_getSymbolCode(config.icon.symbol)}),
-      style: TextStyle(
-        color: fgColor,
-        fontSize: 1024 * (1.0 - ${config.icon.padding} * 2),
-        fontFamily: 'MaterialIcons$styleSuffix',
+  // Utilisation d'un RepaintBoundary pour capturer l'image
+  final key = GlobalKey();
+  
+  await tester.pumpWidget(
+    Directionality(
+      textDirection: TextDirection.ltr,
+      child: Center(
+        child: RepaintBoundary(
+          key: key,
+          child: Container(
+            width: 1024,
+            height: 1024,
+            color: bgColor,
+            child: Center(
+              child: Icon(
+                IconData(${_getSymbolCode(config.icon.symbol)}, fontFamily: 'MaterialIcons$styleSuffix'),
+                color: fgColor,
+                size: 1024 * (1.0 - ${config.icon.padding} * 2),
+              ),
+            ),
+          ),
+        ),
       ),
     ),
-    textDirection: TextDirection.ltr,
   );
-  
-  textPainter.layout();
-  final offset = Offset(
-    (1024 - textPainter.width) / 2,
-    (1024 - textPainter.height) / 2,
-  );
-  textPainter.paint(canvas, offset);
 
-  final picture = recorder.endRecording();
+  // On attend que tout soit bien rendu (incluant les polices si possible)
+  await tester.pumpAndSettle();
+
+  final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  final image = await boundary.toImage(pixelRatio: 1.0);
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
   
-  print('  - Encodage en PNG (1024x1024)...');
-  final img = await picture.toImage(1024, 1024);
-  final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+  if (byteData == null) throw Exception('Échec de la capture de l image');
   
   final file = File('../' + name);
-  await file.writeAsBytes(byteData!.buffer.asUint8List());
+  await file.writeAsBytes(byteData.buffer.asUint8List());
   print('  - Fichier écrit : ' + name);
 }
 
