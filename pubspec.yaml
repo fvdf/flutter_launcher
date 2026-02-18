@@ -1,7 +1,6 @@
 name: flutter_launcher
 description: A powerful CLI tool to generate Flutter app icons and splash screens from a single configuration.
 version: 0.1.0
-publish_to: pub.dev
 homepage: https://github.com/rudydubos/flutter_launcher
 repository: https://github.com/rudydubos/flutter_launcher
 
