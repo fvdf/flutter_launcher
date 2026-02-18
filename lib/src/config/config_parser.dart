@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:path/path.dart' as p;
 import 'config_model.dart';
-import '../utils/logger.dart';
 
 class ConfigParser {
   static LauncherConfig parsePubspec(String projectPath) {
@@ -84,8 +83,8 @@ class ConfigParser {
       weight: yaml['weight'] is int ? yaml['weight'] : 700,
       grade: (yaml['grade'] is num ? yaml['grade'] as num : 0.0).toDouble(),
       opticalSize: yaml['opticalSize'] is int ? yaml['opticalSize'] : 48,
-      padding: (yaml['padding'] is num ? yaml['padding'] as num : 0.18)
-          .toDouble(),
+      padding:
+          (yaml['padding'] is num ? yaml['padding'] as num : 0.18).toDouble(),
     );
   }
 

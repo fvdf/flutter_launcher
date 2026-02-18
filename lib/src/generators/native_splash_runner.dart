@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import '../config/config_model.dart';
@@ -15,24 +16,28 @@ class NativeSplashRunner {
       return;
     }
 
-    Logger.info('Génération du splash screen...');
+    Logger.step(
+        'Configuration native du Splash Screen (via flutter_native_splash)');
 
     final configFile = File(p.join(workingDir, 'flutter_native_splash.yaml'));
     configFile.writeAsStringSync(_generateConfig());
 
-    final result = await Process.run('dart', [
-      'run',
-      'flutter_native_splash:create',
-      '--path=${configFile.path}',
-    ]);
+    final process = await Process.start(
+      'dart',
+      ['run', 'flutter_native_splash:create', '--path=${configFile.path}'],
+    );
 
-    if (result.exitCode != 0) {
-      Logger.debug(result.stdout);
-      Logger.error(result.stderr);
-      throw Exception('flutter_native_splash a échoué.');
+    process.stdout.transform(utf8.decoder).listen(Logger.pipe);
+    process.stderr.transform(utf8.decoder).listen(Logger.pipe);
+
+    final exitCode = await process.exitCode;
+
+    if (exitCode != 0) {
+      throw Exception(
+          'flutter_native_splash a échoué. Relancez avec --verbose.');
     }
 
-    Logger.info('Splash screen généré avec succès.');
+    Logger.success('Splash screen intégré.');
   }
 
   String _generateConfig() {

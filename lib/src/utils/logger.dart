@@ -16,12 +16,26 @@ class Logger {
   }
 
   static void section(String message) {
-    print('\n\x1B[36m=== $message ===\x1B[0m');
+    print('\n\x1B[1m\x1B[36m=== $message ===\x1B[0m');
+  }
+
+  static void step(String message) {
+    print('\x1B[34m[➤]\x1B[0m $message...');
+  }
+
+  static void success(String message) {
+    print('\x1B[32m[✓]\x1B[0m $message');
   }
 
   static void debug(String message) {
     if (verbose) {
       print('\x1B[90m[DEBUG] $message\x1B[0m');
+    }
+  }
+
+  static void pipe(String message) {
+    if (verbose) {
+      stdout.write(message);
     }
   }
 }

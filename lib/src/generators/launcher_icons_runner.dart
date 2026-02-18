@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import '../config/config_model.dart';
@@ -10,25 +11,28 @@ class LauncherIconsRunner {
   LauncherIconsRunner(this.workingDir, this.config);
 
   Future<void> run() async {
-    Logger.info('Génération des icônes d\'application...');
+    Logger.step(
+        'Génération des assets multi-plateformes (via flutter_launcher_icons)');
 
     final configFile = File(p.join(workingDir, 'flutter_launcher_icons.yaml'));
     configFile.writeAsStringSync(_generateConfig());
 
-    final result = await Process.run('dart', [
-      'run',
-      'flutter_launcher_icons',
-      '-f',
-      configFile.path,
-    ]);
+    final process = await Process.start(
+      'dart',
+      ['run', 'flutter_launcher_icons', '-f', configFile.path],
+    );
 
-    if (result.exitCode != 0) {
-      Logger.debug(result.stdout);
-      Logger.error(result.stderr);
-      throw Exception('flutter_launcher_icons a échoué.');
+    process.stdout.transform(utf8.decoder).listen(Logger.pipe);
+    process.stderr.transform(utf8.decoder).listen(Logger.pipe);
+
+    final exitCode = await process.exitCode;
+
+    if (exitCode != 0) {
+      throw Exception(
+          'flutter_launcher_icons a échoué. Relancez avec --verbose.');
     }
 
-    Logger.info('Icônes d\'application générées avec succès.');
+    Logger.success('Icônes d\'application générées.');
   }
 
   String _generateConfig() {

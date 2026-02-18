@@ -25,13 +25,12 @@ class Launcher {
         _clean();
       }
 
+      Logger.step('Chargement du pubspec.yaml');
       final config = ConfigParser.parsePubspec(projectPath);
-      Logger.info('Configuration chargée avec succès.');
 
       if (args.dryRun) {
         Logger.warn(
-          'Mode DRY-RUN activé. Aucune modification ne sera effectuée.',
-        );
+            'Mode DRY-RUN activé. Aucune modification ne sera effectuée.');
         return;
       }
 
@@ -49,7 +48,8 @@ class Launcher {
       final splashRunner = NativeSplashRunner(workingDir, config);
       await splashRunner.run();
 
-      Logger.section('Succès ! Relancez votre app pour voir les changements.');
+      Logger.section('TERMINE AVEC SUCCÈS');
+      print('Votre application a été mise à jour avec les nouveaux assets.');
     } catch (e) {
       Logger.error(e.toString());
       exit(1);

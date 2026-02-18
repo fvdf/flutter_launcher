@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import '../../config/config_model.dart';
@@ -10,21 +11,25 @@ class IconRenderer {
   IconRenderer(this.workingDir, this.config);
 
   Future<void> render() async {
-    Logger.info('Rendu des icônes de base via Flutter...');
+    Logger.step('Initialisation du moteur de rendu');
 
     final rendererDir = Directory(p.join(workingDir, 'renderer'));
     if (!rendererDir.existsSync()) {
       rendererDir.createSync(recursive: true);
     }
 
+    Logger.step('Préparation du projet de rendu temporaire');
     _prepareRendererProject(rendererDir.path);
 
+    Logger.step(
+        'Exécution du rendu Flutter (cela peut prendre un moment la première fois)');
     await _runRenderer(rendererDir.path);
 
-    Logger.info('Icônes générées dans $workingDir');
+    Logger.success('Images de base générées dans build/flutter_launcher');
   }
 
   void _prepareRendererProject(String path) {
+    Logger.debug('Création du fichier pubspec.yaml du renderer...');
     // 1. pubspec.yaml
     File(p.join(path, 'pubspec.yaml')).writeAsStringSync('''
 name: launcher_icon_renderer
@@ -38,6 +43,7 @@ dev_dependencies:
     sdk: flutter
 ''');
 
+    Logger.debug('Création du code de test de rendu...');
     // 2. test/render_test.dart
     final testDir = Directory(p.join(path, 'test'));
     if (!testDir.existsSync()) testDir.createSync();
@@ -130,15 +136,20 @@ int _getSymbolCode(String name) {
   }
 
   Future<void> _runRenderer(String path) async {
-    final result = await Process.run('flutter', [
-      'test',
-      'test/render_test.dart',
-    ], workingDirectory: path);
+    final process = await Process.start(
+      'flutter',
+      ['test', 'test/render_test.dart'],
+      workingDirectory: path,
+    );
 
-    if (result.exitCode != 0) {
-      Logger.debug(result.stdout);
-      Logger.debug(result.stderr);
-      throw Exception('Flutter test failed to render icons.');
+    process.stdout.transform(utf8.decoder).listen(Logger.pipe);
+    process.stderr.transform(utf8.decoder).listen(Logger.pipe);
+
+    final exitCode = await process.exitCode;
+
+    if (exitCode != 0) {
+      throw Exception(
+          'Flutter test failed to render icons. Execute with --verbose for more info.');
     }
   }
 
