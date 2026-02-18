@@ -63,6 +63,7 @@ class LauncherIconsRunner {
     // iOS
     if (pMap['ios'] == true) {
       yaml += '  ios: true\n';
+      yaml += '  remove_alpha_ios: true\n';
     }
 
     // Web (Needs a Map)

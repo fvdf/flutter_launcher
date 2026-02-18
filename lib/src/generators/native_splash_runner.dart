@@ -53,9 +53,10 @@ class NativeSplashRunner {
     yaml += '  android_12: ${config.splash.android12}\n';
     yaml += '  fullscreen: ${config.splash.fullscreen}\n';
 
-    // Platforms
+    // Platforms (Filter only supported ones)
+    final supportedSplashPlatforms = ['android', 'ios', 'web'];
     config.platforms.forEach((key, value) {
-      if (value) {
+      if (value && supportedSplashPlatforms.contains(key)) {
         yaml += '  $key: true\n';
       }
     });
